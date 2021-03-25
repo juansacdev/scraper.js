@@ -41,12 +41,17 @@ const init = async () => {
         await page.goto('https://casa.mercadolibre.com.co/MCO-612776051-vendo-casa-en-villa-del-doradobogota-mls-21-429-_JM#position=1&type=item&tracking_id=337c21fe-425e-4f35-9482-a3c06845e517')
 
         const property = await page.evaluate(() => {
-            const category = document.querySelector('.vip-classified-info dl').innerText
             const mainTitle = document.querySelector('.item-title h1').innerText
-            const price = document.querySelector('#productInfo .price-tag-fraction').innerText.replaceAll('.','')
-            const area = document.querySelector('#productInfo .item-attributes .align-surface').innerText
+            const category = document.querySelector('.vip-classified-info dl').innerText
             const rooms = parseInt(document.querySelector('#productInfo .item-attributes .align-room').innerText)
             const bathrooms = parseInt(document.querySelector('#productInfo .item-attributes .align-bathroom').innerText)
+            const price = parseInt(document.querySelector('#productInfo .price-tag-fraction')
+                .innerText
+                .replaceAll('.',''))
+            const area = document.querySelector('#productInfo .item-attributes .align-surface')
+                .innerText
+                .split(' ', 2)
+                .join('')
 
             return {
                 category,
@@ -57,9 +62,8 @@ const init = async () => {
                 bathrooms,
             }
         })
-
+        property.url = page.url()
         console.log(property);
-
 
 
         // const html = await page.evaluate(() => document.body.innerHTML)
