@@ -21,23 +21,44 @@ const init = async () => {
             deviceScaleFactor: 1
         })
 
-        await page.goto('https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/#origin=search&as_word=true')
+        // await page.goto('https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/#origin=search&as_word=true')
 
-        const linkPages = await page.evaluate(() => {
-            const elements = document.querySelectorAll('ol > li .ui-search-result__wrapper .ui-search-result__image a')
+        // const linkPages = await page.evaluate(() => {
+        //     const elements = document.querySelectorAll('ol > li .ui-search-result__wrapper .ui-search-result__image a')
 
-            const links = []
-            for (const element of elements) {
-                links.push(element.href)
+        //     const links = []
+        //     for (const element of elements) {
+        //         links.push(element.href)
+        //     }
+        //     return links
+        // })
+
+        // for (const linkPage of linkPages) {
+        //     await page.goto(linkPage)
+        //     console.log(`visitando la pagina ${linkPage}`);
+        // }
+
+        await page.goto('https://casa.mercadolibre.com.co/MCO-612776051-vendo-casa-en-villa-del-doradobogota-mls-21-429-_JM#position=1&type=item&tracking_id=337c21fe-425e-4f35-9482-a3c06845e517')
+
+        const property = await page.evaluate(() => {
+            const category = document.querySelector('.vip-classified-info dl').innerText
+            const mainTitle = document.querySelector('.item-title h1').innerText
+            const price = document.querySelector('#productInfo .price-tag-fraction').innerText.replaceAll('.','')
+            const area = document.querySelector('#productInfo .item-attributes .align-surface').innerText
+            const rooms = parseInt(document.querySelector('#productInfo .item-attributes .align-room').innerText)
+            const bathrooms = parseInt(document.querySelector('#productInfo .item-attributes .align-bathroom').innerText)
+
+            return {
+                category,
+                mainTitle,
+                price,
+                area,
+                rooms,
+                bathrooms,
             }
-            return links
         })
 
-        for (const linkPage of linkPages) {
-            await page.goto(linkPage)
-            console.log(`visitando la pagina ${linkPage}`);
-        }
-
+        console.log(property);
 
 
 
