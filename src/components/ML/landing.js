@@ -25,7 +25,7 @@ const init = async () => {
 
 
         await page.waitForSelector(`.nav-search-classi >.nav-search-classi-content >.ch-popover-wrapper input`)
-        await page.type(`.nav-search-classi > .nav-search-classi-content > .ch-popover-wrapper input`, ' Bogotá', { delay: 100 })
+        await page.type(`.nav-search-classi > .nav-search-classi-content > .ch-popover-wrapper input`, ' Bogotá D.C.', { delay: 100 })
         await page.waitForSelector(`.nav-search-classi > .nav-search-classi-content > .ch-popover-wrapper > .ch-popover > ul > .ch-autocomplete-item`, )
         await page.waitForTimeout(500)
         await page.click(`.nav-search-classi > .nav-search-classi-content > .ch-popover-wrapper > .ch-popover > ul > .ch-autocomplete-item`)
