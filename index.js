@@ -45,6 +45,17 @@ const init = async () => {
             const category = document.querySelector('.vip-classified-info dl').innerText
             const rooms = parseInt(document.querySelector('#productInfo .item-attributes .align-room').innerText)
             const bathrooms = parseInt(document.querySelector('#productInfo .item-attributes .align-bathroom').innerText)
+            const location = document.querySelector('section > div.section-map-title > div > h3').innerText
+            const age = document.querySelector('.specs-container.specs-layout-alternate > ul > li:last-child > span').innerText
+            const description = document.querySelector('#description-includes p').innerText
+            const elements = document.querySelectorAll('#gallery_dflt > div a')
+
+            const images = []
+
+            for (const element of elements) {
+                images.push(element['href'])
+            }
+
             const price = parseInt(document.querySelector('#productInfo .price-tag-fraction')
                 .innerText
                 .replaceAll('.',''))
@@ -60,8 +71,14 @@ const init = async () => {
                 area,
                 rooms,
                 bathrooms,
+                location,
+                age,
+                description,
+                images,
             }
+
         })
+
         property.url = page.url()
         console.log(property);
 
