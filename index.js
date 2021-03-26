@@ -50,6 +50,50 @@ const init = async () => {
                 location: document.querySelector('section > div.section-map-title > div > h3').innerText,
             }
 
+            const areaLabels = [
+                'Superficie total',
+                'Área construida',
+                'Superficie de terreno',
+            ]
+
+            const labels = [
+                document.querySelector('.specs-container ul li:first-child strong').innerText,
+                document.querySelector('.specs-container ul li:nth-child(2) strong').innerText,
+                document.querySelector('.specs-container ul li:nth-child(3) strong').innerText,
+            ]
+
+            const values = [
+                document.querySelector('.specs-container ul li:first-child span').innerText,
+                document.querySelector('.specs-container ul li:nth-child(2) span').innerText,
+                document.querySelector('.specs-container ul li:nth-child(3) span').innerText,
+            ]
+
+            const area = {
+                total: '',
+                built: '',
+                groud: '',
+            }
+
+            if (labels.includes(areaLabels[0])) {
+
+                area.total = values[0]
+
+                if (labels.includes(areaLabels[1])) {
+
+                    area.built = values[1]
+
+                    if (labels.includes(areaLabels[2])) {
+
+                        area.groud = values[2]
+
+                    }
+
+                }
+
+            }
+
+
+
             const parking = parseInt(document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span').innerText)
             const age = document.querySelector('.specs-container.specs-layout-alternate > ul > li:last-child > span').innerText
             const description = document.querySelector('#description-includes p').innerText
@@ -66,22 +110,22 @@ const init = async () => {
                 .innerText
                 .replaceAll('.',''))
 
-            const area = document.querySelector('#productInfo .item-attributes .align-surface')
-                .innerText
-                .split(' ', 2)
-                .join('')
+            // const area = document.querySelector('#productInfo .item-attributes .align-surface')
+            //     .innerText
+            //     .split(' ', 2)
+            //     .join('')
 
             return {
                 category,
                 mainTitle,
                 price,
-                area,
                 rooms,
                 bathrooms,
                 parking,
                 age,
                 details,
                 ubication,
+                area,
                 description,
                 images,
             }
