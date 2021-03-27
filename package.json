@@ -4,8 +4,8 @@
   "description": "Un script que hace un scraper de diversas paginas, obtiene los datos y los guarda en un csv",
   "main": "index.js",
   "scripts": {
-    "start": "node index",
-    "dev": "nodemon -e js index",
+    "start": "node src/index",
+    "dev": "nodemon -e js src/index",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Juan Sebastián Agudelo @juansacok <juansac.me@gmail.com>",
