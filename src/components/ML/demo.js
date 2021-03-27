@@ -1,14 +1,14 @@
 const puppeteer = require('puppeteer')
 const json2csv = require('json2csv')
-const fs = require('fs')
+const fs = require('fs').promises
 
 const init = async () => {
 
     try {
         console.log('Start to scrape')
-        console.time('End to scrape');
-        const browser = await puppeteer.launch({ headless: false });
-        const page = await browser.newPage();
+        console.time('End to scrape')
+        const browser = await puppeteer.launch({ headless: false })
+        const page = await browser.newPage()
         await page.setViewport({
             height: 768,
             width: 1366,
@@ -111,6 +111,7 @@ const init = async () => {
                 .trim()
             let age
             let parking
+            let parkingLabel
             let adminAmount = ''
 
             switch (lastChild) {
@@ -119,12 +120,16 @@ const init = async () => {
                         .innerText
                         .replaceAll(/(\r\n|\n|\r)/gm, "")
                         .trim()
-                    parking = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span')
+                    parkingLabel = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong')
                         .innerText
-                        .concat(' parqueadero')
                         .replaceAll(/(\r\n|\n|\r)/gm, "")
                         .trim()
-                    break;
+                    parking = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span')
+                        .innerText
+                        .concat(' ', parkingLabel)
+                        .replaceAll(/(\r\n|\n|\r)/gm, "")
+                        .trim()
+                    break
                 case "Valor administración":
                     adminAmount = document.querySelector('.specs-container.specs-layout-alternate > ul > li:last-child > span')
                         .innerText
@@ -134,12 +139,16 @@ const init = async () => {
                         .innerText
                         .replaceAll(/(\r\n|\n|\r)/gm, "")
                         .trim()
-                    parking = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(3) > span')
+                    parkingLabel = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong')
                         .innerText
-                        .concat(' parqueadero')
                         .replaceAll(/(\r\n|\n|\r)/gm, "")
                         .trim()
-                    break;
+                    parking = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(3) > span')
+                        .innerText
+                        .concat(' ', parkingLabel)
+                        .replaceAll(/(\r\n|\n|\r)/gm, "")
+                        .trim()
+                    break
             }
 
             let description = document.querySelector('#description-includes p') || ''
@@ -180,7 +189,7 @@ const init = async () => {
 
         })
         property.url = page.url()
-        console.log(property);
+        console.log(property)
 
         const data =[]
         data.push(property)
@@ -191,14 +200,16 @@ const init = async () => {
             delimiter: '|',
         })
 
-        fs.writeFileSync('./src/public/demo.csv', csv, { encoding:'utf-8' })
+        await fs.writeFile('./src/public/demoML.csv', csv, { encoding:'utf-8' })
+            .then(() => console.log('Data has been writed successfully! 🔥'))
 
         await browser.close()
+            .then(() => console.log('Good bye 👋'))
 
     } catch (error) {
-        console.log(`Something was wrong. ${error}`);
+        console.log(`Something was wrong. ${error}`)
     }
-    console.timeEnd('End to scrape');
+    console.timeEnd('End to scrape')
 }
 
 init()
