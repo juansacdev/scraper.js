@@ -1,0 +1,37 @@
+{
+    "category":"Casas en Venta",
+    "mainTitle":"Quiroga Central, Rafael Uribe Uribe",
+    "price":420000000,
+    "rooms":"11 dormitorios",
+    "bathrooms":"4 baños",
+    "parking":"2 parqueadero",
+    "age":"66 años",
+    "adminAmount":"0 COP",
+    "details":[],
+    "ubication": {
+        "address":"",
+        "location":"Quiroga Central, Rafael Uribe Uribe, Bogotá D.c."
+    },
+    "area":{
+        "total":"104 m²",
+        "built":"286 m²",
+        "groud":""
+    },
+    "description":"HERMOSA CASA DE 3 PLANTAS RENTABLE. 1ER PISO:1 GARAJE, 1 LOCAL, 1 APARTAMENTO DE 2 HABITACIONES. AREA ROPAS, UN BAÑO COMPLETO Y UN BAÑO SOCIAL. 2DO PISO: 2 APARTAMENTOS INDEPENDIENTES DE 2 Y 3 HABITACIONES, BAÑO Y COCINA CADA UNO. 3ER PISO UN APARTAMENTO DE 3 HABITACIONES, SALA COMEDOR, BAÑO Y COCINA CON AREAS DE ROPAS.",
+    "images": [
+        "https://http2.mlstatic.com/D_NQ_NP_723967-MCO43226919652_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_606600-MCO43226919644_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_704265-MCO43226919646_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_974480-MCO43226919655_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_763858-MCO43226919650_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_716268-MCO43226919643_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_963998-MCO43226919654_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_845906-MCO43226919647_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_875823-MCO43226919645_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_784412-MCO43226919651_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_740566-MCO43226919649_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_887251-MCO43226919648_082020-F.webp",
+        "https://http2.mlstatic.com/D_NQ_NP_790416-MCO43226919653_082020-F.webp"
+    ],
+    "url":"https://casa.mercadolibre.com.co/MCO-578199442-casa-en-venta-_JM#position=26&type=item&tracking_id=b047f69a-fb27-41f3-a9f7-02030aece84c",
+}

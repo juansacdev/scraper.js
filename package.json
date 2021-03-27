@@ -4,14 +4,14 @@
   "description": "Un script que hace un scraper de diversas paginas, obtiene los datos y los guarda en un csv",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index",
+    "start": "node src/components/ML/index",
     "dev": "nodemon -e js src/index",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Juan Sebastián Agudelo @juansacok <juansac.me@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.5",
+    "json2csv": "^5.0.6",
     "puppeteer": "^8.0.0"
   }
 }
