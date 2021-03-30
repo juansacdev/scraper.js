@@ -1,245 +1,251 @@
-const puppeteer = require('puppeteer')
-const json2csv = require('json2csv')
-const fs = require('fs').promises
+const puppeteer = require("puppeteer");
+const fs = require("fs").promises;
 
-const init = async () => {
+const getPageURL = (numberPage = 1) => {
+	const currentPage = 1 + 48 * (numberPage - 1);
+	let url = `https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/_Desde_${currentPage}`;
+	return url;
+};
 
-    try {
-        console.log('Starting to scrape')
-        console.time('End to scrape')
+const getNumberOfAllResult = async (page) => {
+	await page.waitForTimeout(200);
+	const pagesAmount = await page.evaluate(() => {
+		const quantityResults = parseInt(
+			document
+				.querySelector("span.ui-search-search-result__quantity-results")
+				.innerText.split(" ")[0]
+				.replace(".", ""),
+		);
+		let arr = [];
+		let totalPages = Math.ceil(quantityResults / 48);
+		for (let index = 1; index <= totalPages; index++) {
+			arr.push(index);
+		}
+		return arr;
+	});
+	return pagesAmount;
+};
 
-        const browser = await puppeteer.launch({ headless: false })
-        const page = await browser.newPage()
+const getAllUrls = async (page) => {
+	const allUrls = [];
+	const totalPages = await getNumberOfAllResult(page);
 
-        await page.setViewport({
-            height: 768,
-            width: 1366,
-            deviceScaleFactor: 1
-        })
+	totalPages.forEach((numberPage) => {
+		const urlPage = getPageURL(numberPage);
+		allUrls.push(urlPage);
+	});
 
-        await page.goto('https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/#origin=search&as_word=true')
+	return allUrls;
+};
 
-        const linkPages = await page.evaluate(() => {
+const getLinksPerPage = async (page) => {
+	await page.waitForTimeout(200);
+	const links = await page.evaluate(() => {
+		const linksPerPage = [];
+		document
+			.querySelectorAll(
+				"ol > li .ui-search-result__wrapper .ui-search-result__image a",
+			)
+			.forEach((element) => linksPerPage.push(element.href));
+		return linksPerPage;
+	});
+	return links;
+};
 
-            const links = []
+const getAllDataAndSaveOnFile = async () => {
+	console.log("Starting to scrape");
+	console.time("End to scrape");
+	const browserChromium = await puppeteer.launch({ headless: false });
+	const pageBrowser = await browserChromium.newPage();
+	const url = getPageURL();
+	await pageBrowser.goto(url);
 
-            document.querySelectorAll('ol > li .ui-search-result__wrapper .ui-search-result__image a')
-                .forEach(element => links.push(element.href))
+	const allUrlForNavigation = await getAllUrls(pageBrowser);
+	console.log({ ...allUrlForNavigation });
 
-            return links
+	let counterPage = 1;
+	let counterInmubeles = 0;
+	const properties = [];
 
-        })
+	for (urlForNavigation of allUrlForNavigation) {
+		await pageBrowser.waitForTimeout(200);
+		await pageBrowser.goto(url);
+		console.log(`visitando la pagina ${urlForNavigation}`);
+		const linksPerPage = await getLinksPerPage(pageBrowser);
+		console.log({ ...linksPerPage });
 
-        let counter = 0
-        const properties = []
+		for (const link of linksPerPage) {
+			await pageBrowser.goto(link);
+			await pageBrowser.waitForSelector(".item-title h1");
+			await pageBrowser.waitForTimeout(200);
+			const property = await pageBrowser.evaluate(() => {
+				const regex = new RegExp(/(\r\n|\n|\r)/, "gim");
 
-        for (const link of linkPages) {
+				const getInnerText = (selector) =>
+					document
+						.querySelector(selector)
+						?.innerText.replaceAll(regex, "")
+						.trim() || "";
 
-            await page.goto(link)
-            await page.waitForSelector('.item-title h1')
+				const mainTitle = getInnerText(".item-title h1");
+				const category = getInnerText(".vip-classified-info dl");
+				const rooms = getInnerText(
+					"#productInfo .item-attributes .align-room",
+				);
+				const bathrooms = getInnerText(
+					"#productInfo .item-attributes .align-bathroom",
+				);
 
-            const property = await page.evaluate(() => {
+				const ubication = {
+					address: getInnerText(
+						"section > div.section-map-title > div > h2",
+					),
+					location: getInnerText(
+						"section > div.section-map-title > div > h3",
+					),
+				};
 
-                const mainTitle = document.querySelector('.item-title h1')
-                    .innerText
-                    .replaceAll(/(\r\n|\n|\r)/gm, "")
-                    .trim()
-                const category = document.querySelector('.vip-classified-info dl')
-                    .innerText
-                    .replaceAll(/(\r\n|\n|\r)/gm, "")
-                    .trim()
-                const rooms = document.querySelector('#productInfo .item-attributes .align-room')
-                    .innerText
-                    .replaceAll(/(\r\n|\n|\r)/gm, "")
-                    .trim()
-                const bathrooms = document.querySelector('#productInfo .item-attributes .align-bathroom')
-                    .innerText
-                    .replaceAll(/(\r\n|\n|\r)/gm, "")
-                    .trim()
+				const areaLabels = [
+					"Superficie total",
+					"Área construida",
+					"Superficie de terreno",
+				];
 
-                const ubication = {
-                    address: document.querySelector('section > div.section-map-title > div > h2')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                    location: document.querySelector('section > div.section-map-title > div > h3')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                }
+				const labels = [
+					getInnerText(".specs-container ul li:first-child strong"),
+					getInnerText(".specs-container ul li:nth-child(2) strong"),
+					getInnerText(".specs-container ul li:nth-child(3) strong"),
+				];
 
-                const areaLabels = [
-                    'Superficie total',
-                    'Área construida',
-                    'Superficie de terreno',
-                ]
+				const values = [
+					getInnerText(".specs-container ul li:first-child span"),
+					getInnerText(".specs-container ul li:nth-child(2) span"),
+					getInnerText(".specs-container ul li:nth-child(3) span"),
+				];
 
-                const labels = [
-                    document.querySelector('.specs-container ul li:first-child strong')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                    document.querySelector('.specs-container ul li:nth-child(2) strong')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                    document.querySelector('.specs-container ul li:nth-child(3) strong')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                ]
+				const area = {
+					total: "",
+					built: "",
+					groud: "",
+				};
 
-                const values = [
-                    document.querySelector('.specs-container ul li:first-child span')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                    document.querySelector('.specs-container ul li:nth-child(2) span')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                    document.querySelector('.specs-container ul li:nth-child(3) span')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim(),
-                ]
+				if (labels.includes(areaLabels[0])) {
+					area.total = values[0];
 
-                const area = {
-                    total: '',
-                    built: '',
-                    groud: '',
-                }
+					if (labels.includes(areaLabels[1])) {
+						area.built = values[1];
 
-                if (labels.includes(areaLabels[0])) {
+						if (labels.includes(areaLabels[2])) {
+							area.groud = values[2];
+						}
+					}
+				}
 
-                    area.total = values[0]
+				const lastChild = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:last-child > strong",
+				);
 
-                    if (labels.includes(areaLabels[1])) {
+				let age;
+				let parking;
+				let parkingLabel;
+				let adminAmount = "";
 
-                        area.built = values[1]
+				switch (lastChild) {
+					case "Antigüedad":
+						age = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:last-child > span",
+						);
+						parkingLabel = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong",
+						);
+						parking = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span",
+						).concat(" ", parkingLabel);
+						break;
 
-                        if (labels.includes(areaLabels[2])) {
+					case "Valor administración":
+						adminAmount = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:last-child > span",
+						);
+						age = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span",
+						);
+						parkingLabel = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong",
+						);
+						parking = getInnerText(
+							".specs-container.specs-layout-alternate > ul > li:nth-last-child(3) > span",
+						).concat(" ", parkingLabel);
+						break;
+				}
 
-                            area.groud = values[2]
+				const description = getInnerText("#description-includes p");
 
-                        }
+				const images = [];
+				document
+					.querySelectorAll("#gallery_dflt > div a")
+					.forEach((element) => images.push(element.href));
 
-                    }
+				const details = [];
+				document
+					.querySelectorAll(
+						".item-details__content.ui-view-more__content > ul > li",
+					)
+					.forEach((element) => details.push(element.innerText));
 
-                }
+				const price = parseInt(
+					getInnerText("#productInfo .price-tag-fraction").replaceAll(
+						".",
+						"",
+					),
+				);
 
-                const lastChild = document.querySelector('.specs-container.specs-layout-alternate > ul > li:last-child > strong')
-                    .innerText
-                    .replaceAll(/(\r\n|\n|\r)/gm, "")
-                    .trim()
+				return {
+					category,
+					mainTitle,
+					price,
+					rooms,
+					bathrooms,
+					parking,
+					age,
+					adminAmount,
+					details,
+					// ubication,
+					address: ubication["address"],
+					location: ubication["location"],
+					// area,
+					areaTotal: area["total"],
+					areaBuilt: area["built"],
+					areaGroud: area["groud"],
+					description,
+					images,
+				};
+			});
+			property.url = link;
+			properties.push(property);
 
-                let age
-                let parking
-                let parkingLabel
-                let adminAmount = ''
+			console.log(property);
+			console.log(
+				`Inmueble ${++counterInmubeles} - ${
+					linksPerPage.length
+				}. Rest ${linksPerPage.length - counterInmubeles} Inmuebles 🏡
+			        \rPage ${counterPage} - ${allUrlForNavigation.length}. Rest ${
+					allUrlForNavigation.length - counterPage
+				} Pages 📖`,
+			);
+		}
+		++counterPage;
+		counterInmubeles = 0;
+	}
 
-                switch (lastChild) {
+	await fs
+		.writeFile("./src/public/dataML.json", JSON.stringify(properties), {
+			encoding: "utf-8",
+		})
+		.then(() => console.log("Data has been writed successfully! 🔥"));
 
-                    case "Antigüedad":
-                        age = document.querySelector('.specs-container.specs-layout-alternate > ul > li:last-child > span')
-                            .innerText
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        parkingLabel = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong')
-                            .innerText
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        parking = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span')
-                            .innerText
-                            .concat(' ', parkingLabel)
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        break
+	await browser.close().then(() => console.log("Good bye 👋"));
+	console.timeEnd("End to scrape");
+};
 
-                    case "Valor administración":
-                        adminAmount = document.querySelector('.specs-container.specs-layout-alternate > ul > li:last-child > span')
-                            .innerText
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        age = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span')
-                            .innerText
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        parkingLabel = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong')
-                            .innerText
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        parking = document.querySelector('.specs-container.specs-layout-alternate > ul > li:nth-last-child(3) > span')
-                            .innerText
-                            .concat(' ', parkingLabel)
-                            .replaceAll(/(\r\n|\n|\r)/gm, "")
-                            .trim()
-                        break
-                }
-
-                let description = document.querySelector('#description-includes p') || ''
-
-                if (description){
-                    description = document.querySelector('#description-includes p')
-                        .innerText
-                        .replaceAll(/(\r\n|\n|\r)/gm, "")
-                        .trim()
-                }
-
-                const images = []
-                document.querySelectorAll('#gallery_dflt > div a')
-                    .forEach(element => images.push(element.href))
-
-                const details = []
-                document.querySelectorAll('.item-details__content.ui-view-more__content > ul > li')
-                    .forEach((element) => details.push(element.innerText))
-
-                const price = parseInt(document.querySelector('#productInfo .price-tag-fraction')
-                    .innerText
-                    .replaceAll('.',''))
-
-                return {
-                    category,
-                    mainTitle,
-                    price,
-                    rooms,
-                    bathrooms,
-                    parking,
-                    age,
-                    adminAmount,
-                    details,
-                    ubication,
-                    area,
-                    description,
-                    images,
-                }
-
-            })
-
-            property.url = page.url()
-            properties.push(property)
-
-            console.log(property)
-            console.log(`Page ${++counter} of ${linkPages.length} pages. Rest ${linkPages.length - counter} pages.`)
-
-        }
-
-        const csv = json2csv.parse(properties, {
-            quote:'',
-            escapedQuote: '',
-            delimiter: '|',
-        })
-
-        await fs.writeFile('./src/public/dataML.csv', csv, {encoding: 'utf-8'})
-            .then(() => console.log('Data has been writed successfully! 🔥'))
-
-        await browser.close()
-            .then(() => console.log('Good bye 👋'))
-
-    } catch (error) {
-        console.log(`Something was wrong. ${error}`)
-    }
-    console.timeEnd('End to scrape')
-}
-
-init()
+getAllDataAndSaveOnFile();
