@@ -55,7 +55,7 @@ const getLinksPerPage = async (page) => {
 const getAllDataAndSaveOnFile = async () => {
 	console.log("Starting to scrape");
 	console.time("End to scrape");
-	const browserChromium = await puppeteer.launch({ headless: false });
+	const browserChromium = await puppeteer.launch();
 	const pageBrowser = await browserChromium.newPage();
 	const url = getPageURL();
 	await pageBrowser.goto(url);
