@@ -13,8 +13,17 @@ const getPageURL = (numberPage = 1) => {
 	return url;
 };
 
+// const getPageURL = (
+// 	numberPage = 1,
+// 	url = "https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/_Desde_",
+// ) => {
+// 	const currentPage = 1 + 48 * (numberPage - 1);
+// 	let urlParse = `${url}${currentPage}`;
+// 	return urlParse;
+// };
+
 const getNumberOfAllResult = async (page) => {
-	await page.waitForTimeout(200);
+	await page.waitForNavigation();
 	const pagesAmount = await page.evaluate(() => {
 		const quantityResults = parseInt(
 			document
@@ -45,7 +54,7 @@ const getAllUrls = async (page) => {
 };
 
 const getLinksPerPage = async (page) => {
-	await page.waitForTimeout(200);
+	await page.waitForNavigation();
 	const links = await page.evaluate(() => {
 		const linksPerPage = [];
 		document
@@ -57,6 +66,11 @@ const getLinksPerPage = async (page) => {
 	});
 	return links;
 };
+
+const saveDataOnFile = async ({ data, path }) =>
+	await fs
+		.writeFile(path, JSON.stringify(data), { encoding: "utf-8" })
+		.then(() => console.log("Data has been writed successfully! 🔥"));
 
 const getAllDataAndSaveOnFile = async () => {
 	console.log("Starting to scrape");
@@ -74,16 +88,16 @@ const getAllDataAndSaveOnFile = async () => {
 	const properties = [];
 
 	for (urlForNavigation of allUrlForNavigation) {
-		await pageBrowser.waitForTimeout(200);
 		await pageBrowser.goto(url);
+		await pageBrowser.waitForNavigation();
 		console.log(`visitando la pagina ${urlForNavigation}`);
 		const linksPerPage = await getLinksPerPage(pageBrowser);
 		console.log({ ...linksPerPage });
 
 		for (const link of linksPerPage) {
 			await pageBrowser.goto(link);
+			await pageBrowser.waitForNavigation();
 			await pageBrowser.waitForSelector(".item-title h1");
-			await pageBrowser.waitForTimeout(200);
 			const property = await pageBrowser.evaluate(() => {
 				const regex = new RegExp(/(\r\n|\n|\r)/, "gim");
 
@@ -244,14 +258,16 @@ const getAllDataAndSaveOnFile = async () => {
 		counterInmubeles = 0;
 	}
 
-	await fs
-		.writeFile("./src/public/dataML.json", JSON.stringify(properties), {
-			encoding: "utf-8",
-		})
-		.then(() => console.log("Data has been writed successfully! 🔥"));
-
 	await browser.close().then(() => console.log("Good bye 👋"));
 	console.timeEnd("End to scrape");
+
+	return {
+		data: properties,
+		path: "./src/public/housesForSaleMl.json",
+	};
+
 };
 
-getAllDataAndSaveOnFile();
+getAllDataAndSaveOnFile()
+	.then(async (data) => await saveDataOnFile(data));
+

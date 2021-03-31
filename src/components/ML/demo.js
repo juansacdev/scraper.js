@@ -9,10 +9,15 @@ const getStart = async (browser, urlTarget) => {
 	return page;
 };
 
+const saveDataOnFile = async ({ data, path }) =>
+	await fs
+		.writeFile(path, JSON.stringify(data), { encoding: "utf-8" })
+		.then(() => console.log("Data has been writed successfully! 🔥"));
+
 const init = async () => {
 	try {
-		console.log("Start to scrape");
 		console.time("End to scrape");
+		console.log("Start to scrape");
 		const browser = await getLaunch();
 		const page = await getStart(
 			browser,
@@ -162,17 +167,21 @@ const init = async () => {
 		const data = [];
 		data.push(property);
 
-		await fs
-			.writeFile("./src/public/demoML.json", JSON.stringify(data), {
-				encoding: "utf-8",
-			})
-			.then(() => console.log("Data has been writed successfully! 🔥"));
-
 		await browser.close().then(() => console.log("Good bye 👋"));
+
+		console.timeEnd("End to scrape");
+		return {
+			data: property,
+			path: "./src/public/demo.json",
+		};
 	} catch (error) {
 		console.error(`Something was wrong. ${error}`);
 	}
-	console.timeEnd("End to scrape");
 };
 
-init();
+init().then(async (data) => await saveDataOnFile(data));
+
+// dataToSave
+// data, path
+// {data, path}{ data: data, path: path }
+// dataToSave {data:dataToSave['data'], path:dataToSave['path']}
