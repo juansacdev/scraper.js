@@ -265,9 +265,6 @@ const getAllDataAndSaveOnFile = async () => {
 		data: properties,
 		path: "./src/public/housesForSaleMl.json",
 	};
-
 };
 
-getAllDataAndSaveOnFile()
-	.then(async (data) => await saveDataOnFile(data));
-
+getAllDataAndSaveOnFile().then(async (data) => await saveDataOnFile(data));
