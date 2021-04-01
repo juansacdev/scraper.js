@@ -1,10 +1,4 @@
 const fs = require("fs").promises;
-const sites = [
-	"https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/",
-	"https://listado.mercadolibre.com.co/inmuebles/casas/arriendo/bogota-dc/",
-	"https://listado.mercadolibre.com.co/inmuebles/apartamentos/venta/bogota-dc/",
-	"https://listado.mercadolibre.com.co/inmuebles/apartamentos/arriendo/bogota-dc/",
-];
 
 const getPageURL = (numberPage = 1) => {
 	const currentPage = 1 + 48 * (numberPage - 1);
@@ -230,7 +224,6 @@ const getAllDataPerPage = async (listLinksToInmubles, page) => {
 	}
 	return allDataPerPage;
 };
-
 
 module.exports = {
 	getPageURL,
