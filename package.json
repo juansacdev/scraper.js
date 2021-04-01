@@ -1,11 +1,11 @@
 {
 	"name": "scraper",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "Un script que hace un scraper de diversas paginas, obtiene los datos y los guarda en un csv",
 	"main": "index.js",
 	"scripts": {
-		"start": "node src/components/ML/index",
-		"dev": "nodemon -e js src/index",
+		"start": "node src/index",
+		"dev": "nodemon src/index",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "Juan Sebastián Agudelo @juansacok <juansac.me@gmail.com>",

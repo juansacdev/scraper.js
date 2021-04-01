@@ -1,26 +1,13 @@
 const fs = require("fs").promises;
-const { sites } = require("./sites");
 
-const getPageURL = (
-	numberPage = 1,
-	url = "https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/_Desde_",
-) => {
+const getPageURL = ({ numberPage = 1, url }) => {
 	const currentPage = 1 + 48 * (numberPage - 1);
-	let url = `${url}${currentPage}`;
-	return url;
+	currentPage <= 0 || currentPage === 1 ? "" : currentPage;
+	let urlPage = `${url}_Desde_${currentPage}`;
+	return urlPage;
 };
 
-// const getPageURL = (
-// 	numberPage = 1,
-// 	url = "https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/_Desde_",
-// ) => {
-// 	const currentPage = 1 + 48 * (numberPage - 1);
-// 	let urlParse = `${url}${currentPage}`;
-// 	return urlParse;
-// };
-
 const getNumberOfAllResult = async (page) => {
-	await page.waitForTimeout(200);
 	const pagesAmount = await page.evaluate(() => {
 		const quantityResults = parseInt(
 			document
@@ -38,12 +25,12 @@ const getNumberOfAllResult = async (page) => {
 	return pagesAmount;
 };
 
-const getAllUrls = async (page) => {
+const getAllUrls = async (page, site) => {
 	const allUrls = [];
 	const totalPages = await getNumberOfAllResult(page);
 
-	totalPages.forEach((numberPage) => {
-		const urlPage = getPageURL(numberPage);
+	totalPages.forEach((pageNumber) => {
+		const urlPage = getPageURL({ numberPage: pageNumber, url: site });
 		allUrls.push(urlPage);
 	});
 
@@ -51,7 +38,6 @@ const getAllUrls = async (page) => {
 };
 
 const getLinksPerPage = async (page) => {
-	await page.waitForTimeout(200);
 	const links = await page.evaluate(() => {
 		const linksPerPage = [];
 		document
@@ -73,7 +59,6 @@ const saveDataOnFile = async ({ data, path, ext }) =>
 
 const getAllDataPerInmueble = async (page, linkToInmueble) => {
 	await page.goto(linkToInmueble);
-	await page.waitForTimeout(200);
 	await page.waitForSelector(".item-title h1");
 	const property = await page.evaluate(() => {
 		const regex = new RegExp(/(\r\n|\n|\r)/, "gim");
@@ -224,7 +209,7 @@ const getAllDataPerPage = async (listLinksToInmubles, page) => {
 		const property = await getAllDataPerInmueble(page, link);
 		property.url = link;
 		allDataPerPage.push(property);
-		console.log(`Inmueble ${listLinksToInmubles.indexOf(link)}`);
+		console.log(`Pusheando inmueble ${listLinksToInmubles.indexOf(link)}`);
 	}
 	return allDataPerPage;
 };
