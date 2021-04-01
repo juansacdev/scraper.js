@@ -1,8 +1,12 @@
 const fs = require("fs").promises;
+const { sites } = require("./sites");
 
-const getPageURL = (numberPage = 1) => {
+const getPageURL = (
+	numberPage = 1,
+	url = "https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/_Desde_",
+) => {
 	const currentPage = 1 + 48 * (numberPage - 1);
-	let url = `https://listado.mercadolibre.com.co/inmuebles/casas/venta/bogota-dc/_Desde_${currentPage}`;
+	let url = `${url}${currentPage}`;
 	return url;
 };
 
@@ -231,4 +235,4 @@ module.exports = {
 	getLinksPerPage,
 	saveDataOnFile,
 	getAllDataPerPage,
-}
+};

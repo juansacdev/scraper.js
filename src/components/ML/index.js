@@ -12,12 +12,12 @@ const init = async () => {
 	try {
 		console.log("Starting to scrape");
 		console.time("End to scrape");
-		const browserChromium = await puppeteer.launch({
-			slowMo: 10,
-			headless: false,
-			defaultViewport: null,
+		const browser = await puppeteer.launch({
+			// slowMo: 10,
+			// headless: false,
+			// defaultViewport: null,
 		});
-		const page = await browserChromium.newPage();
+		const page = await browser.newPage();
 		const url = getPageURL();
 		await page.goto(url);
 		const allUrlForNavigation = await getAllUrls(page);
@@ -39,7 +39,15 @@ const init = async () => {
 							"Se cierra anticipadamente debido a que ya no hay más paginas 👋",
 						),
 					);
+
+				await saveDataOnFile({
+					data: allDataPerPage,
+					path: `./src/public/ML/housesForSale-Page-${++counterPage}`,
+					ext: "json",
+				});
+
 				console.timeEnd("End to scrape");
+				return;
 			}
 
 			await saveDataOnFile({
