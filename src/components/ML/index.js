@@ -23,7 +23,7 @@ const getPageURL = (numberPage = 1) => {
 // };
 
 const getNumberOfAllResult = async (page) => {
-	await page.waitForNavigation();
+	await page.waitForTimeout(200);
 	const pagesAmount = await page.evaluate(() => {
 		const quantityResults = parseInt(
 			document
@@ -31,8 +31,8 @@ const getNumberOfAllResult = async (page) => {
 				.innerText.split(" ")[0]
 				.replace(".", ""),
 		);
-		let arr = [];
 		let totalPages = Math.ceil(quantityResults / 48);
+		let arr = [];
 		for (let index = 1; index <= totalPages; index++) {
 			arr.push(index);
 		}
@@ -54,7 +54,7 @@ const getAllUrls = async (page) => {
 };
 
 const getLinksPerPage = async (page) => {
-	await page.waitForNavigation();
+	await page.waitForTimeout(200);
 	const links = await page.evaluate(() => {
 		const linksPerPage = [];
 		document
@@ -67,204 +67,208 @@ const getLinksPerPage = async (page) => {
 	return links;
 };
 
-const saveDataOnFile = async ({ data, path }) =>
+const saveDataOnFile = async ({ data, path, ext }) =>
 	await fs
-		.writeFile(path, JSON.stringify(data), { encoding: "utf-8" })
+		.writeFile(`${path}.${ext}`, JSON.stringify(data), {
+			encoding: "utf-8",
+		})
 		.then(() => console.log("Data has been writed successfully! 🔥"));
 
-const getAllDataAndSaveOnFile = async () => {
+const getAllDataPerInmueble = async (page, linkToInmueble) => {
+	await page.goto(linkToInmueble);
+	await page.waitForTimeout(200);
+	await page.waitForSelector(".item-title h1");
+	const property = await page.evaluate(() => {
+		const regex = new RegExp(/(\r\n|\n|\r)/, "gim");
+
+		const getInnerText = (selector) =>
+			document
+				.querySelector(selector)
+				?.innerText.replaceAll(regex, "")
+				.trim() || "";
+
+		const mainTitle = getInnerText(".item-title h1");
+		const category = getInnerText(".vip-classified-info dl");
+		const rooms = getInnerText("#productInfo .item-attributes .align-room");
+		const bathrooms = getInnerText(
+			"#productInfo .item-attributes .align-bathroom",
+		);
+
+		const ubication = {
+			address: getInnerText("section > div.section-map-title > div > h2"),
+			location: getInnerText(
+				"section > div.section-map-title > div > h3",
+			),
+		};
+
+		const areaLabels = [
+			"Superficie total",
+			"Área construida",
+			"Superficie de terreno",
+		];
+
+		const labels = [
+			getInnerText(".specs-container ul li:first-child strong"),
+			getInnerText(".specs-container ul li:nth-child(2) strong"),
+			getInnerText(".specs-container ul li:nth-child(3) strong"),
+		];
+
+		const values = [
+			getInnerText(".specs-container ul li:first-child span"),
+			getInnerText(".specs-container ul li:nth-child(2) span"),
+			getInnerText(".specs-container ul li:nth-child(3) span"),
+		];
+
+		const area = {
+			total: "",
+			built: "",
+			groud: "",
+		};
+
+		if (labels.includes(areaLabels[0])) {
+			area.total = values[0];
+
+			if (labels.includes(areaLabels[1])) {
+				area.built = values[1];
+
+				if (labels.includes(areaLabels[2])) {
+					area.groud = values[2];
+				}
+			}
+		}
+
+		const lastChild = getInnerText(
+			".specs-container.specs-layout-alternate > ul > li:last-child > strong",
+		);
+
+		let age;
+		let parking;
+		let parkingLabel;
+		let adminAmount = "";
+
+		switch (lastChild) {
+			case "Antigüedad":
+				age = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:last-child > span",
+				);
+				parkingLabel = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong",
+				);
+				parking = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span",
+				).concat(" ", parkingLabel);
+				break;
+
+			case "Valor administración":
+				adminAmount = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:last-child > span",
+				);
+				age = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span",
+				);
+				parkingLabel = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong",
+				);
+				parking = getInnerText(
+					".specs-container.specs-layout-alternate > ul > li:nth-last-child(3) > span",
+				).concat(" ", parkingLabel);
+				break;
+		}
+
+		const description = getInnerText("#description-includes p");
+
+		const images = [];
+		document
+			.querySelectorAll("#gallery_dflt > div a")
+			.forEach((element) => images.push(element.href));
+
+		const details = [];
+		document
+			.querySelectorAll(
+				".item-details__content.ui-view-more__content > ul > li",
+			)
+			.forEach((element) => details.push(element.innerText));
+
+		const price = parseInt(
+			getInnerText("#productInfo .price-tag-fraction").replaceAll(
+				".",
+				"",
+			),
+		);
+
+		return {
+			category,
+			mainTitle,
+			price,
+			rooms,
+			bathrooms,
+			parking,
+			age,
+			adminAmount,
+			details,
+			// ubication,
+			address: ubication["address"],
+			location: ubication["location"],
+			// area,
+			areaTotal: area["total"],
+			areaBuilt: area["built"],
+			areaGroud: area["groud"],
+			description,
+			images,
+		};
+	});
+
+	return property;
+};
+
+const getAllDataPerPage = async (listLinksToInmubles, page) => {
+	const allDataPerPage = [];
+	for (const link of listLinksToInmubles) {
+		const property = await getAllDataPerInmueble(page, link);
+		property.url = link;
+		allDataPerPage.push(property);
+		console.log(`Inmueble ${listLinksToInmubles.indexOf(link)}`);
+	}
+	return allDataPerPage;
+};
+
+const init = async () => {
 	console.log("Starting to scrape");
 	console.time("End to scrape");
-	const browserChromium = await puppeteer.launch();
-	const pageBrowser = await browserChromium.newPage();
+	const browserChromium = await puppeteer.launch({
+		slowMo: 10,
+		headless: false,
+		defaultViewport: null,
+	});
+	const page = await browserChromium.newPage();
 	const url = getPageURL();
-	await pageBrowser.goto(url);
+	await page.goto(url);
+	const allUrlForNavigation = await getAllUrls(page);
 
-	const allUrlForNavigation = await getAllUrls(pageBrowser);
-	console.log({ ...allUrlForNavigation });
+	let counterPage = 0;
+	for (const urlPage of allUrlForNavigation) {
+		await page.goto(urlPage);
+		await page.waitForTimeout(200);
 
-	let counterPage = 1;
-	let counterInmubeles = 0;
-	const properties = [];
+		const linksPerPage = await getLinksPerPage(page);
 
-	for (urlForNavigation of allUrlForNavigation) {
-		await pageBrowser.goto(url);
-		await pageBrowser.waitForNavigation();
-		console.log(`visitando la pagina ${urlForNavigation}`);
-		const linksPerPage = await getLinksPerPage(pageBrowser);
-		console.log({ ...linksPerPage });
+		const allDataPerPage = await getAllDataPerPage(linksPerPage, page);
 
-		for (const link of linksPerPage) {
-			await pageBrowser.goto(link);
-			await pageBrowser.waitForNavigation();
-			await pageBrowser.waitForSelector(".item-title h1");
-			const property = await pageBrowser.evaluate(() => {
-				const regex = new RegExp(/(\r\n|\n|\r)/, "gim");
+		await saveDataOnFile({
+			data: allDataPerPage,
+			path: `./src/public/housesForSale-Page-${counterPage}`,
+			ext: "json",
+		});
 
-				const getInnerText = (selector) =>
-					document
-						.querySelector(selector)
-						?.innerText.replaceAll(regex, "")
-						.trim() || "";
-
-				const mainTitle = getInnerText(".item-title h1");
-				const category = getInnerText(".vip-classified-info dl");
-				const rooms = getInnerText(
-					"#productInfo .item-attributes .align-room",
-				);
-				const bathrooms = getInnerText(
-					"#productInfo .item-attributes .align-bathroom",
-				);
-
-				const ubication = {
-					address: getInnerText(
-						"section > div.section-map-title > div > h2",
-					),
-					location: getInnerText(
-						"section > div.section-map-title > div > h3",
-					),
-				};
-
-				const areaLabels = [
-					"Superficie total",
-					"Área construida",
-					"Superficie de terreno",
-				];
-
-				const labels = [
-					getInnerText(".specs-container ul li:first-child strong"),
-					getInnerText(".specs-container ul li:nth-child(2) strong"),
-					getInnerText(".specs-container ul li:nth-child(3) strong"),
-				];
-
-				const values = [
-					getInnerText(".specs-container ul li:first-child span"),
-					getInnerText(".specs-container ul li:nth-child(2) span"),
-					getInnerText(".specs-container ul li:nth-child(3) span"),
-				];
-
-				const area = {
-					total: "",
-					built: "",
-					groud: "",
-				};
-
-				if (labels.includes(areaLabels[0])) {
-					area.total = values[0];
-
-					if (labels.includes(areaLabels[1])) {
-						area.built = values[1];
-
-						if (labels.includes(areaLabels[2])) {
-							area.groud = values[2];
-						}
-					}
-				}
-
-				const lastChild = getInnerText(
-					".specs-container.specs-layout-alternate > ul > li:last-child > strong",
-				);
-
-				let age;
-				let parking;
-				let parkingLabel;
-				let adminAmount = "";
-
-				switch (lastChild) {
-					case "Antigüedad":
-						age = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:last-child > span",
-						);
-						parkingLabel = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong",
-						);
-						parking = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span",
-						).concat(" ", parkingLabel);
-						break;
-
-					case "Valor administración":
-						adminAmount = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:last-child > span",
-						);
-						age = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > span",
-						);
-						parkingLabel = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:nth-last-child(2) > strong",
-						);
-						parking = getInnerText(
-							".specs-container.specs-layout-alternate > ul > li:nth-last-child(3) > span",
-						).concat(" ", parkingLabel);
-						break;
-				}
-
-				const description = getInnerText("#description-includes p");
-
-				const images = [];
-				document
-					.querySelectorAll("#gallery_dflt > div a")
-					.forEach((element) => images.push(element.href));
-
-				const details = [];
-				document
-					.querySelectorAll(
-						".item-details__content.ui-view-more__content > ul > li",
-					)
-					.forEach((element) => details.push(element.innerText));
-
-				const price = parseInt(
-					getInnerText("#productInfo .price-tag-fraction").replaceAll(
-						".",
-						"",
-					),
-				);
-
-				return {
-					category,
-					mainTitle,
-					price,
-					rooms,
-					bathrooms,
-					parking,
-					age,
-					adminAmount,
-					details,
-					// ubication,
-					address: ubication["address"],
-					location: ubication["location"],
-					// area,
-					areaTotal: area["total"],
-					areaBuilt: area["built"],
-					areaGroud: area["groud"],
-					description,
-					images,
-				};
-			});
-			property.url = link;
-			properties.push(property);
-
-			console.log(property);
-			console.log(
-				`Inmueble ${++counterInmubeles} - ${
-					linksPerPage.length
-				}. Rest ${linksPerPage.length - counterInmubeles} Inmuebles 🏡
-			        \rPage ${counterPage} - ${allUrlForNavigation.length}. Rest ${
-					allUrlForNavigation.length - counterPage
-				} Pages 📖`,
-			);
-		}
-		++counterPage;
-		counterInmubeles = 0;
+		console.log(
+			`Page ${++counterPage} completed - ${allUrlForNavigation.length}. Rest ${
+				allUrlForNavigation.length - counterPage
+			} Pages 📖`,
+		);
 	}
 
 	await browser.close().then(() => console.log("Good bye 👋"));
 	console.timeEnd("End to scrape");
-
-	return {
-		data: properties,
-		path: "./src/public/housesForSaleMl.json",
-	};
 };
 
-getAllDataAndSaveOnFile().then(async (data) => await saveDataOnFile(data));
+init();
