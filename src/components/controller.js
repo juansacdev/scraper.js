@@ -52,7 +52,7 @@ const getLinksPerPage = async (page) => {
 
 const saveDataOnFile = async ({ data, path, ext }) =>
 	await fs
-		.writeFile(`${path}.${ext}`, JSON.stringify(data), {
+		.writeFile(`${path}.${ext}`, JSON.stringify(data, null, 2), {
 			encoding: "utf-8",
 		})
 		.then(() => console.log("Data has been writed successfully! 🔥"));
@@ -208,7 +208,7 @@ const getAllDataPerPage = async (listLinksToInmubles, page) => {
 	for (const link of listLinksToInmubles) {
 		const property = await getAllDataPerInmueble(page, link);
 		property.url = link;
-		// allDataPerPage.push(property);
+		allDataPerPage.push(property);
 		console.log(`Pusheando inmueble ${listLinksToInmubles.indexOf(link)}`);
 	}
 	return allDataPerPage;
