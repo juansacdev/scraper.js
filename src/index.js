@@ -1,5 +1,5 @@
 const puppeteer = require("puppeteer");
-const { sites } = require("./components/ML/sites");
+const { sites } = require("./components/sites");
 const {
 	getAllUrls,
 	getLinksPerPage,
@@ -34,32 +34,11 @@ const init = async () => {
 				);
 
 				if (!allDataPerPage.length) {
-					await browser
-						.close()
-						.then(() =>
-							console.log(
-								"Se cierra anticipadamente debido a que ya no hay más paginas 👋",
-							),
-						);
+					console.log(
+						`La url ${urlPage} no contiene articulos. Esto se debe a que esta url no esta en el paginado. 👋`,
+					);
 
-					await saveDataOnFile({
-						data: allDataPerPage,
-						path: `./src/public/${
-							sites.indexOf(site) === 0
-								? "HouseSale/"
-								: sites.indexOf(site) === 1
-								? "HouseRent/"
-								: sites.indexOf(site) === 2
-								? "AptoSale/"
-								: sites.indexOf(site) === 3
-								? "AptoRent/"
-								: ""
-						}Page-${++counterPage}`,
-						ext: "json",
-					});
-
-					console.timeEnd("End to scrape");
-					return;
+					continue;
 				}
 
 				await saveDataOnFile({

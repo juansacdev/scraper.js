@@ -208,7 +208,7 @@ const getAllDataPerPage = async (listLinksToInmubles, page) => {
 	for (const link of listLinksToInmubles) {
 		const property = await getAllDataPerInmueble(page, link);
 		property.url = link;
-		allDataPerPage.push(property);
+		// allDataPerPage.push(property);
 		console.log(`Pusheando inmueble ${listLinksToInmubles.indexOf(link)}`);
 	}
 	return allDataPerPage;
